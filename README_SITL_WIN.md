@@ -55,10 +55,21 @@
 5) Paste the code previously copied from the Advanced Class repository
 6) Press Esc to exit out of insert mode
 7) press :wq to save and quit the file
-8) Make the script executable by running the following command:
+8) run the following command:     (NEW)
+   - cd Tools/autotest          
+9) run this command:              (NEW)
+   - vim locations.txt
+10) press i to edit file then paste this line at the bottom:  (NEW)
+    - UofA=53.523219,-113.526319,0,90
+11) press esc then type ':wq' to save and exit the file      (NEW)
+12) now put in the two commands to get back to the root directory:   (NEW)
+    - cd
+    - cd ardupilot
+13) Make the script executable by running the following command:
    - chmod +x run_sitl_win.sh
-9) Run the file by running the following command from the root directory:
+14) Run the file by running the following command from the root directory:
    - ./run_sitl_win.sh
 
+### Reach out to me (Cameron) on teams for questions concerning the new changes or just help with the process (also make sure mission planner is only connected to udp 14550)
 
 ### Note: Setup steps can vary sometimes from machine to machine. If you're running into any troubles while using this documentation, please don't hesitate to reach out to me (Hassan) over Teams and hopefully we can figure it out together :)
