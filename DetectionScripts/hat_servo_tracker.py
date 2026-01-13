@@ -10,7 +10,7 @@ TARGET_LABEL = "hat"     # set to None to accept any class
 # ===================
 
 # MAVLink helpers
-def open_serial(port="/dev/cu.usbserial-DN04T9FH", baud=57600):
+def open_serial(port="/dev/tty.Bluetooth-Incoming-Port", baud=57600):
     try:
         ser = serial.Serial(port, baudrate=baud, timeout=1)
         print(f"Opened serial port {port} @ {baud}")
@@ -35,7 +35,7 @@ def move_servo(ser, servo_num, pwm, target_sys=1, target_comp=1):
 
 def main():
     # Serial link to FC (close QGC/Mission Planner if using same port)
-    ser = open_serial("/dev/cu.usbserial-DN04T9FH", 57600)
+    ser = open_serial("/dev/tty.Bluetooth-Incoming-Port", 57600)
     if not ser:
         return
 

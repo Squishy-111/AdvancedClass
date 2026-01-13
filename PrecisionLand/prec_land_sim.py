@@ -9,7 +9,7 @@ import time
 from pymavlink import mavutil
 
 # --- CONFIGURATION ---
-MAVLINK_URL = "udpin:0.0.0.0:14551"
+MAVLINK_URL = "udp:127.0.0.1:14551"
 HOME_LAT = 53.5269
 HOME_LON = -113.5256
 TARGET_LAT = 53.5271
@@ -111,6 +111,8 @@ def ll_to_local_m(lat, lon, lat0, lon0):
     dlon = math.radians(lon - lon0)
     x_east = R * dlon * math.cos(math.radians((lat + lat0) / 2.0))
     y_north = R * dlat
+    print(f"East offset: {x_east} \n North offset: {y_north}")
+
     return x_east, y_north
 
 def send_synthetic_target(m, drone_lat, drone_lon, drone_alt, drone_yaw):
@@ -127,7 +129,7 @@ def send_synthetic_target(m, drone_lat, drone_lon, drone_alt, drone_yaw):
     # Right (y)   = -Sin(yaw)*North + Cos(yaw)*East
     bx = math.cos(drone_yaw) * ny + math.sin(drone_yaw) * ex
     by = -math.sin(drone_yaw) * ny + math.cos(drone_yaw) * ex
-
+    
     # 3. Calculate Angles (Camera Frame)
     # Note: MAVLink LANDING_TARGET uses "angle_x" (Right/Left) and "angle_y" (Up/Down)
     # We use atan2 to get the precise angle to the target
@@ -138,7 +140,7 @@ def send_synthetic_target(m, drone_lat, drone_lon, drone_alt, drone_yaw):
     angle_y = math.atan2(bx, drone_alt) # Angle forward
 
     dist = math.sqrt(bx*bx + by*by + drone_alt*drone_alt)
-
+    print(f"DISTANCE TO TARGET: {dist}")
     # 4. FIX: Use the correct timestamp masking from your working code
     time_boot_ms = int(time.time() * 1000) & 0xFFFFFFFF
 
@@ -184,10 +186,9 @@ def main():
             
             # If we are in the "Landing" phase (approx coords match target), start streaming
             # Or simply stream whenever we are close to the target lat/lon
-            dist_to_pad_xy, _ = ll_to_local_m(TARGET_LAT, TARGET_LON, current_lat, current_lon)
-            
-            # Simple check: If within 20m of target, start streaming "Visual" data
-            if abs(dist_to_pad_xy) < 20.0 and current_alt > 0.5:
+            ex, ny = ll_to_local_m(TARGET_LAT, TARGET_LON, current_lat, current_lon)
+            dist_xy = math.hypot(ex, ny)
+            if dist_xy < 20.0 and current_alt > 0.5:
                 # We need Yaw, so we fetch the latest attitude
                 att = m.recv_match(type='ATTITUDE', blocking=True)
                 
@@ -195,7 +196,8 @@ def main():
                 d, ax, ay = send_synthetic_target(m, current_lat, current_lon, current_alt, att.yaw)
                 
                 if int(time.time()*10)%5 == 0:
-                    print(f"PLND Active: Dist={d:.1f}m AngX={ax:.1f} AngY={ay:.1f}")
+                    pass
+                    # print(f"PLND Active: Dist={d:.1f}m AngX={ax:.1f} AngY={ay:.1f}")
 
 if __name__ == "__main__":
     main()
