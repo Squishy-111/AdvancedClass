@@ -3,7 +3,7 @@ import os
 import numpy as np
 import math
 
-#some concerns about min pixel area in detection but works decent
+#some concerns about min pixel area in detection and camera shake but works decent
 
 #initalize each contour that passes two tests into an object
 class Tracked_contours:
@@ -159,6 +159,7 @@ upper_hsv = np.array([255,255 - sensitivity,255])
 min_pixel_area = 300 # could cause problems if really far away maybe?
 id_counter = 0
 existing_valid_contours = []
+streak_min = 20
 
 
 while True:
@@ -193,7 +194,7 @@ while True:
         streak = contour.get_streak()
         id = contour.get_id()
         x, w, y, h = contour.get_rect()
-        if streak > 20:
+        if streak > streak_min:
             cv2.rectangle(img, (x, y), (x + w,y + h), (0,0,255), 3)
             cv2.putText(img, f"streak:{streak}_ID:{id}", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
 
