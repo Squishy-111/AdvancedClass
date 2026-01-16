@@ -3,6 +3,9 @@ import os
 import numpy as np
 import math
 
+#some concerns about min pixel area in detection but works decent
+
+#initalize each contour that passes two tests into an object
 class Tracked_contours:
 
     def __init__(self, id, x, w, y, h):
@@ -51,7 +54,7 @@ class Tracked_contours:
         dist = math.hypot(c_x1 - c_x2, c_y1 - c_y2)
         return dist
     
-
+#tests how close new contours are to the previous frame's contours to determine if they are the same white square
 def found_match(objects, new_x, new_w, new_y, new_h):
 
     max_pixel_distance = 100
@@ -69,7 +72,8 @@ def found_match(objects, new_x, new_w, new_y, new_h):
             best_obj.update(new_x,new_w,new_y,new_h)
             return True
     return False 
-
+#-------------------------------------------------------------------------------------------------------------------
+#checks the amount of whiteness in the detected square(shadows may be bad so should include patching line somewhere)
 def Whiteness_check(checked_contour, mask):
    
     ideal_whiteness_percentage = 0.95 
@@ -98,6 +102,7 @@ def Whiteness_check(checked_contour, mask):
     
     return False
 #------------------------------------------------------------
+#irrelevant test that doesn't work, just kept it to let others possibly imporve on it or not develop something that also fails
 def square_test(checked_contour):
     lower_ratio = 0.5
     upper_ratio = 1.5
@@ -116,6 +121,7 @@ def square_test(checked_contour):
     else:
         return False, None
 #------------------------------------------------------------------------------
+#test to see how many vertexs needed to plot outer contour of detected object
 def vertex_amount_test(checked_contour):
     precision = 0.02
     epsilon = precision*cv2.arcLength(checked_contour, True)
