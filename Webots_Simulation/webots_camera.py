@@ -3,63 +3,68 @@ import struct
 import numpy as np
 import cv2
 
-# --- Configuration ---
-TCP_IP = '127.0.0.1'
-TCP_PORT = 5599
-# ---------------------
-def grab_image(tcp_port, tcp_ip):
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#code to get image from webots to opencv format
+class CameraClient:
+    def __init__(self, tcp_ip='127.0.0.1', tcp_port=5599):
+        self.tcp_ip = tcp_ip
+        self.tcp_port = tcp_port
+        self.sock = None
+        self.header_size = struct.calcsize("=HH")
+        
+        # Connect immediately upon initialization
+        self.connect()
 
-    try:
-        print(f"Connecting to {tcp_ip}:{tcp_port}...")
-        s.connect((tcp_ip, tcp_port))
-        print("Connected!")
+    def connect(self):
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            print(f"Connecting to Camera at {self.tcp_ip}:{self.tcp_port}...")
+            self.sock.connect((self.tcp_ip, self.tcp_port))
+            print("Camera Connected!")
+        except Exception as e:
+            print(f"Failed to connect to camera: {e}")
+            self.sock = None
 
-        # Corresponds to your screenshot's header size
-        header_size = struct.calcsize("=HH")
+    def get_frame(self):
+        if self.sock is None:
+            return None
 
-        while True:
-            # 1. Receive Header
+        try:
+            # 1. Receive Header (Width, Height)
             header = b''
-            while len(header) < header_size:
-                chunk = s.recv(header_size - len(header))
-                if not chunk: break
+            while len(header) < self.header_size:
+                chunk = self.sock.recv(self.header_size - len(header))
+                if not chunk: 
+                    raise ConnectionError("Socket closed during header recv")
                 header += chunk
             
-            if len(header) != header_size:
-                print("Connection lost (header mismatch)")
-                break
-
-            # 2. Parse Header (Width, Height)
             width, height = struct.unpack("=HH", header)
 
-            # 3. Calculate expected payload size (RGB = w * h * 3)
+            # 2. Calculate Payload Size
             bytes_to_read = width * height * 3
         
-            # 4. Receive Image Data
+            # 3. Receive Image Data
             img_data = b''
             while len(img_data) < bytes_to_read:
-                # Request up to 4096 bytes at a time, or whatever is left
+                # Read in larger chunks (4096) for speed
                 remaining = bytes_to_read - len(img_data)
-                chunk = s.recv(min(remaining, 4096))
-                if not chunk: break
+                chunk = self.sock.recv(min(remaining, 4096))
+                if not chunk: 
+                    raise ConnectionError("Socket closed during payload recv")
                 img_data += chunk
             
-            if len(img_data) != bytes_to_read:
-                break
-
-            # 5. Convert to Numpy Array
-            # Reshape directly to (height, width, 3) for RGB
-            img = np.frombuffer(img_data, np.uint8).reshape((height, width,3))
-
+            # 4. Convert to Numpy
+            img = np.frombuffer(img_data, np.uint8).reshape((height, width, 3))
+            
+            # 5. Convert RGB to BGR for OpenCV
             img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-            # 6. Display
             return img
 
-    except Exception as e:
-        print(f"Error fetching image: {e}")
-        return None
-        
-    finally:
-        # This ensures the socket is closed, but doesn't override the return value
-        s.close()
+        except Exception as e:
+            print(f"Camera Error: {e}")
+            # Optional: Try to reconnect automatically?
+            # self.connect() 
+            return None
+
+    def close(self):
+        if self.sock:
+            self.sock.close()
